@@ -1,0 +1,36 @@
+name: Audiveris OMR
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: Direct URL of PDF/PNG/JPG to recognize
+        required: true
+        type: string
+jobs:
+  recognize:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Download score
+        run: |
+          curl --fail --location --max-filesize 20971520 "${{ inputs.source_url }}" -o input.pdf
+      - name: Install Audiveris
+        run: |
+          curl -L -o audiveris.deb "https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-ubuntu24.04-x86_64.deb"
+          sudo apt-get update
+          sudo apt-get install -y ./audiveris.deb
+      - name: Recognize score
+        run: |
+          mkdir -p out
+          Audiveris -batch -export -output out input.pdf
+      - name: Upload MusicXML result
+        uses: actions/upload-artifact@v4
+        with:
+          name: score-split-musicxml
+          path: |
+            out/**/*.mxl
+            out/**/*.musicxml
+            out/**/*.xml
+          if-no-files-found: error
+          retention-days: 1
