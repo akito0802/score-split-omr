@@ -70,7 +70,8 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get install -y imagemagick
-          read WIDTH HEIGHT < <(identify -format '%w %h' "$INPUT_FILE")
+          WIDTH=$(identify -format '%w' "$INPUT_FILE")
+          HEIGHT=$(identify -format '%h' "$INPUT_FILE")
           echo "Input image: ${WIDTH}x${HEIGHT}"
           LONGEST=$(( WIDTH > HEIGHT ? WIDTH : HEIGHT ))
           if [ "$LONGEST" -lt 5000 ]; then
