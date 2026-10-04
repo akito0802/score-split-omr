@@ -64,6 +64,24 @@ jobs:
           echo "Audiveris installed; dpkg rc=$DPKG_RC"
           /opt/audiveris/bin/Audiveris -help >/dev/null
 
+      - name: Prepare image for OMR
+        if: ${{ env.INPUT_FILE != 'input.pdf' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y imagemagick
+          read WIDTH HEIGHT < <(identify -format '%w %h' "$INPUT_FILE")
+          echo "Input image: ${WIDTH}x${HEIGHT}"
+          LONGEST=$(( WIDTH > HEIGHT ? WIDTH : HEIGHT ))
+          if [ "$LONGEST" -lt 5000 ]; then
+            SCALE=$(awk -v longest="$LONGEST" 'BEGIN { printf "%.4f", 5000 / longest }')
+            EXT="${INPUT_FILE##*.}"
+            convert "$INPUT_FILE" -filter Lanczos -resize "${SCALE}00%" -units PixelsPerInch -density 300 "prepared.$EXT"
+            INPUT_FILE="prepared.$EXT"
+            echo "INPUT_FILE=$INPUT_FILE" >> "$GITHUB_ENV"
+            identify "$INPUT_FILE"
+          fi
+
       - name: Recognize score
         shell: bash
         run: |
