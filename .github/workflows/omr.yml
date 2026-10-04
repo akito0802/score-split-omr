@@ -78,14 +78,14 @@ jobs:
           # grayscale, normalize contrast and binarize local staff details.
           LONGEST=$(( WIDTH > HEIGHT ? WIDTH : HEIGHT ))
           if [ "$LONGEST" -lt 5000 ]; then
-            SCALE=$(awk -v longest="$LONGEST" 'BEGIN { printf "%.4f", 5000 / longest }')
+            SCALE_PERCENT=$(( (5000 * 100 + LONGEST - 1) / LONGEST ))
           else
-            SCALE="1.0000"
+            SCALE_PERCENT=100
           fi
 
           convert "$INPUT_FILE" \
             -background white -alpha remove -alpha off \
-            -filter Lanczos -resize "${SCALE}00%" \
+            -filter Lanczos -resize "${SCALE_PERCENT}%" \
             -colorspace Gray \
             -auto-level \
             -contrast-stretch 0.5%x0.5% \
