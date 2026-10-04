@@ -6,6 +6,7 @@ on:
         description: Temporary signed URL of PDF/PNG/JPG
         required: true
         type: string
+
 jobs:
   recognize:
     runs-on: ubuntu-24.04
@@ -35,8 +36,32 @@ jobs:
           set -euo pipefail
           curl --fail --location --retry 3 -o audiveris.deb "https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-ubuntu24.04-x86_64.deb"
           sudo apt-get update
-          sudo apt-get install -y ./audiveris.deb
-          test -x /opt/audiveris/bin/Audiveris
+
+          # Audiveris' package post-install script calls xdg-desktop-menu.
+          # GitHub-hosted runners are headless, so create a minimal writable
+          # system menu tree before installing the package.
+          sudo mkdir -p /usr/local/share/applications
+          sudo mkdir -p /usr/local/share/desktop-directories
+          sudo mkdir -p /etc/xdg/menus/applications-merged
+          sudo mkdir -p /usr/share/desktop-directories
+          sudo chmod 755 /usr/local/share/applications /usr/local/share/desktop-directories /etc/xdg/menus/applications-merged /usr/share/desktop-directories
+
+          export XDG_DATA_DIRS="/usr/local/share:/usr/share"
+          export XDG_CONFIG_DIRS="/etc/xdg"
+
+          # Install payload. The desktop-menu postinst may still be unsuitable
+          # for a headless runner; the Audiveris payload itself is what OMR needs.
+          set +e
+          sudo -E dpkg -i ./audiveris.deb
+          DPKG_RC=$?
+          set -e
+
+          if [ ! -x /opt/audiveris/bin/Audiveris ]; then
+            echo "Audiveris executable missing after package extraction (dpkg rc=$DPKG_RC)"
+            exit 1
+          fi
+
+          echo "Audiveris installed; dpkg rc=$DPKG_RC"
           /opt/audiveris/bin/Audiveris -help >/dev/null
 
       - name: Recognize score
