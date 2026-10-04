@@ -83,7 +83,8 @@ jobs:
             SCALE="1.0000"
           fi
 
-          convert "$INPUT_FILE"             -background white -alpha remove -alpha off             -filter Lanczos -resize "${SCALE}00%"             -colorspace Gray             -auto-level             -contrast-stretch 0.5%x0.5%             -adaptive-threshold 31x31+8%             -type bilevel             -units PixelsPerInch -density 300             prepared.png
+            -sharpen 0x1 \
+            -threshold 72% \
 
           INPUT_FILE="prepared.png"
           echo "INPUT_FILE=$INPUT_FILE" >> "$GITHUB_ENV"
