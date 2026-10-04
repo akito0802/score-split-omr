@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       source_url:
-        description: Direct URL of PDF/PNG/JPG to recognize
+        description: Temporary signed URL of PDF/PNG/JPG
         required: true
         type: string
 jobs:
@@ -12,18 +12,31 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Download score
+      - name: Download score preserving type
+        shell: bash
+        env:
+          SOURCE_URL: ${{ inputs.source_url }}
         run: |
-          curl --fail --location --max-filesize 20971520 "${{ inputs.source_url }}" -o input.pdf
+          set -euo pipefail
+          curl --fail --location --max-filesize 20971520 "$SOURCE_URL" -o input.bin
+          MIME="$(file --brief --mime-type input.bin)"
+          case "$MIME" in
+            application/pdf) EXT=pdf ;;
+            image/png) EXT=png ;;
+            image/jpeg) EXT=jpg ;;
+            *) echo "Unsupported file type: $MIME"; exit 2 ;;
+          esac
+          mv input.bin "input.$EXT"
+          echo "INPUT_FILE=input.$EXT" >> "$GITHUB_ENV"
       - name: Install Audiveris
         run: |
-          curl -L -o audiveris.deb "https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-ubuntu24.04-x86_64.deb"
+          curl --fail -L -o audiveris.deb "https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-ubuntu24.04-x86_64.deb"
           sudo apt-get update
           sudo apt-get install -y ./audiveris.deb
       - name: Recognize score
         run: |
           mkdir -p out
-          Audiveris -batch -export -output out input.pdf
+          Audiveris -batch -export -output out "$INPUT_FILE"
       - name: Upload MusicXML result
         uses: actions/upload-artifact@v4
         with:
