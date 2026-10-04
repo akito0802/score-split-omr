@@ -28,15 +28,25 @@ jobs:
           esac
           mv input.bin "input.$EXT"
           echo "INPUT_FILE=input.$EXT" >> "$GITHUB_ENV"
+
       - name: Install Audiveris
+        shell: bash
         run: |
-          curl --fail -L -o audiveris.deb "https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-ubuntu24.04-x86_64.deb"
+          set -euo pipefail
+          curl --fail --location --retry 3 -o audiveris.deb "https://github.com/Audiveris/audiveris/releases/download/5.11.0/Audiveris-5.11.0-ubuntu24.04-x86_64.deb"
           sudo apt-get update
           sudo apt-get install -y ./audiveris.deb
+          test -x /opt/audiveris/bin/Audiveris
+          /opt/audiveris/bin/Audiveris -help >/dev/null
+
       - name: Recognize score
+        shell: bash
         run: |
+          set -euo pipefail
           mkdir -p out
-          Audiveris -batch -export -output out "$INPUT_FILE"
+          /opt/audiveris/bin/Audiveris -batch -export -output out "$INPUT_FILE"
+          find out -maxdepth 3 -type f -print
+
       - name: Upload MusicXML result
         uses: actions/upload-artifact@v4
         with:
