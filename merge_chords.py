@@ -44,9 +44,9 @@ def main():
     for line in Path(sys.argv[2]).read_text(errors='ignore').splitlines():
         a=line.split('\t')
         if len(a)<4: continue
-        try: x,y,w=float(a[0]),float(a[1]),float(a[2])
+        try: x,y,w=float(a[6]),float(a[7]),float(a[8])
         except: continue
-        c=parse_chord(a[3])
+        c=parse_chord(a[11])
         if c: rows.append((x+w/2,y,c[0]))
     if not rows: print('No chord symbols detected'); return
     measures=root.findall('.//part[1]/measure')
