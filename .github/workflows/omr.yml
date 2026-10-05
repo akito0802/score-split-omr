@@ -13,6 +13,9 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Checkout OMR helpers
+        uses: actions/checkout@v4
+
       - name: Download score preserving type
         shell: bash
         env:
