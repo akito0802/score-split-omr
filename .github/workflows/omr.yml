@@ -132,7 +132,12 @@ jobs:
             python3 merge_chords.py "$RESULT" chords.tsv || true
             MERGED="${RESULT%.*}.musicxml"
             if [ -s "$MERGED" ]; then
-              cp "$MERGED" out/chord-merged.musicxml
+              # The app extracts the first MusicXML-like artifact it finds.
+              # Remove Audiveris' unmerged exports so the chord-enriched file is unambiguous.
+              cp "$MERGED" /tmp/chord-merged.musicxml
+              find out -type f \( -iname '*.mxl' -o -iname '*.musicxml' -o -iname '*.xml' \) -delete
+              cp /tmp/chord-merged.musicxml out/000-chord-merged.musicxml
+              echo "Final chord-enriched result: out/000-chord-merged.musicxml"
             fi
           fi
 
