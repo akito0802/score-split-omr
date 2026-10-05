@@ -132,12 +132,10 @@ jobs:
             python3 merge_chords.py "$RESULT" chords.tsv || true
             MERGED="${RESULT%.*}.musicxml"
             if [ -s "$MERGED" ]; then
-              # The app extracts the first MusicXML-like artifact it finds.
-              # Remove Audiveris' unmerged exports so the chord-enriched file is unambiguous.
-              cp "$MERGED" /tmp/chord-merged.musicxml
-              find out -type f \( -iname '*.mxl' -o -iname '*.musicxml' -o -iname '*.xml' \) -delete
-              cp /tmp/chord-merged.musicxml out/000-chord-merged.musicxml
-              echo "Final chord-enriched result: out/000-chord-merged.musicxml"
+              # Keep the original Audiveris score as canonical. The app consumes this
+              # second file only for <harmony> metadata, never for notes/measures.
+              cp "$MERGED" out/chord-merged.musicxml
+              echo "Chord metadata result: out/chord-merged.musicxml"
             fi
           fi
 
